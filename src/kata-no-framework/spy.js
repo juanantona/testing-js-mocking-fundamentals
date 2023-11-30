@@ -2,33 +2,29 @@ const thumbWar = require('../thumb-war');
 const utils = require('../utils');
 const assert = require('assert');
 
-const spyOn = function (module, method) {
-  const originalMethod = module[method];
+const fn = function (fnImpl = () => {}) {
+  const calls = [];
 
-  const fn = function (fnImpl) {
-    let fnImplementation = fnImpl;
-    const calls = [];
-
-    const mockFn = function (...params) {
-      calls.push(params);
-      return fnImplementation(...params);
-    };
-
-    const mockImplementation = function (fnImpl) {
-      fnImplementation = fnImpl;
-    };
-
-    const mockRestore = function () {
-      module[method] = originalMethod;
-    };
-
-    mockFn.mock = { calls };
-    mockFn.mockImplementation = mockImplementation;
-    mockFn.mockRestore = mockRestore;
-    return mockFn;
+  const mockFn = function (...params) {
+    calls.push(params);
+    return fnImpl(...params);
   };
 
-  module[method] = fn(() => {});
+  const mockImplementation = function (newFnImpl) {
+    fnImpl = newFnImpl;
+  };
+
+  mockFn.mock = { calls };
+  mockFn.mockImplementation = mockImplementation;
+  return mockFn;
+};
+
+const spyOn = function (module, method) {
+  const originalMethod = module[method];
+  module[method] = fn();
+  module[method].mockRestore = function () {
+    module[method] = originalMethod;
+  };
 };
 
 spyOn(utils, 'getWinner');
